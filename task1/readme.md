@@ -1,5 +1,8 @@
 ## Архитектура системы для «Будущего 2.0» через год
 
+Шаблон https://github.com/plantuml-stdlib/C4-PlantUML
+
+[C4-Containers-2_0-Target.puml](C4-Containers-2_0-Target.puml)
 ## Таблица проблемных мест «Будущего 2.0»
 
 | Проблема                                                            | Страдающие бизнес-сценарии                                                                                                                                                                                                                                                                                        |
