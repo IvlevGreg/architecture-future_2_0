@@ -1,0 +1,50 @@
+@startuml
+title Диаграмма развертывания (Deployment) — автоматизация Terraform
+
+left to right direction
+skinparam shadowing false
+skinparam defaultTextAlignment center
+
+
+node "CI/CD" as cicd {
+  artifact "Repo" as repo #DCFCE7
+  node "Runner CI" as runner #DCFCE7
+}
+
+storage "S3/Object Storage" as s3 #DCFCE7
+
+cloud "Yandex Cloud" as yc {
+  node "Network (VPC)" as net #DCFCE7
+  node "VM, Ubuntu 22.04" as vm #DCFCE7
+  storage "Disk, network-ssd 15GB" as disk #DCFCE7
+  node "Service Account" as sa #DCFCE7
+  file "Key (OAuth)" as key #F3F4F6
+}
+
+node "Legacy" as legacy {
+  database "SQL Server 2008 DWH" as dwh #F3F4F6
+  node "Power BI" as bi #F3F4F6
+}
+
+repo --> runner : Код
+runner --> s3 : tfstate
+runner --> sa : аутентификация
+sa --> key : выдача/ротация
+
+runner --> net : terraform apply
+runner --> disk
+runner --> vm
+
+vm --> dwh : миграции/интеграции (опц.)
+bi --> dwh : отчётность (врем.)
+
+legend right
+  <b>Условные обозначения:</b>
+  <color:#DCFCE7>■</color> — Управляется Terraform
+  <color:#F3F4F6>■</color> — Управляется вручную
+endlegend
+
+
+@enduml
+
+

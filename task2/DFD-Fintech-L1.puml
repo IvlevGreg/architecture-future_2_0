@@ -1,0 +1,35 @@
+@startuml DFD-L1-Fintech
+!includeurl https://raw.githubusercontent.com/ArmanAvanesyan/DFD-PlantUML/main/DFD_Level_1.puml
+
+startDfd(Simple)
+
+External(e_finUsers, "Пользователи финдоменa (риск/AML)")
+External(e_reg,      "Регуляторы/аудит")
+
+Process("Финтех ↔ Интеграция ↔ Витрина")
+    SubProcess(p_accounts, "3.1", "Счета/договора")
+    SubProcess(p_tx,       "3.2", "Транзакции/платежи")
+    SubProcess(p_credit,   "3.3", "Кредиты/скоринг")
+    SubProcess(p_mesh,     "6.2", "События/Kafka + CDC")
+    SubProcess(p_gov,      "7.2", "ABAC/DQ/Catalog")
+    SubProcess(p_read,     "5.2", "Портал/BI — отчёты/дашборды")
+
+    DataStore(ds_lake,  "Lakehouse")
+    DataStore(ds_marts, "Финтех-витрины (Gold)")
+DataFlows()
+
+Flow(e_finUsers, p_read, "Запросы отчётов (риск/AML)")
+Flow(p_accounts, p_mesh, "События счетов/догов.")
+Flow(p_tx,       p_mesh, "События транзакций/платежей")
+Flow(p_credit,   p_mesh, "Кредитные события/скоринг")
+
+Flow(p_mesh,  ds_lake,  "Сырьевые потоки")
+Flow(ds_lake, ds_marts, "Accounts/Transactions/CreditPortfolio → Gold")
+
+Flow(p_gov, ds_marts, "Политики/маскирование/DQ")
+Flow(p_read, ds_marts, "Чтение витрин")
+Flow(ds_marts, p_read, "Срезы/дашборды")
+Flow(ds_marts, e_reg,  "Агрегированная рег. отчётность")
+
+endDfd()
+@enduml

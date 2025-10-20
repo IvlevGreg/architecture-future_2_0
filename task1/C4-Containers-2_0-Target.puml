@@ -1,0 +1,63 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+LAYOUT_LEFT_RIGHT()
+title Архитектура системы для «Будущего 2.0» через год
+
+Person(bi_user, "Бизнес-пользователь", "Self-service отчётность")
+Person(ops, "Оператор клиники", "Работа в клинических системах")
+System_Ext(regs, "Регуляторы", "Требования к отчётности и ИБ")
+System_Ext(partners, "Партнёры", "Фарма/производители электроники")
+
+Boundary(portal, "Портал и BI") {
+  Container(portal_app, "Портал самообслуживания", "Web + SSO", "Каталог данных, заявки на доступ")
+  Container(bi, "BI-система", "Power BI/аналог", "Дашборды/Ad-hoc (без медкарт и исследований)")
+}
+
+Boundary(data, "Платформа данных (Lakehouse)") {
+  ContainerDb(lake, "Lakehouse-хранилище", "Object Storage + ACID", "Bronze/Silver/Gold, разграничение доступа")
+  Container(sem, "Семантический слой", "dbt/semantic", "Согласованные метрики, RLS/CLS")
+}
+
+Boundary(integ, "Интеграционный слой") {
+  Container(bus, "Событийная шина", "Kafka/PubSub", "Слабосвязанная интеграция доменов")
+  Container(api, "API-шлюз", "Gateway", "Контракты, аутентификация")
+}
+
+Boundary(care, "Домен Клиника") {
+  ContainerDb(ehr, "EHR/EMR OLTP", "RDBMS", "Карточки/истории болезни")
+  Container(ai, "ИИ-сервисы", "Python", "Диагностика, рекомендации")
+}
+
+Boundary(fin, "Домен Финтех/Банк") {
+  Container(core, "Core Banking", "Java/Golang", "Счета, транзакции, кредиты")
+}
+
+Boundary(legacy, "Легаси (временная роль)") {
+  ContainerDb(dwh, "DWH SQL Server 2008", "MS SQL", "Текущие отчёты")
+}
+
+Rel(bi_user, portal_app, "SSO")
+Rel(bi_user, bi, "Просмотр дашбордов (S1)")
+Rel(ops, ehr, "Работа с пациентами")
+
+Rel(ehr, api, "CRUD")
+Rel(ai, bus, "События ИИ")
+Rel(core, bus, "Транзакционные события")
+Rel(partners, api, "B2B API")
+Rel(regs, bi, "Рег-отчётность (S1)")
+
+Rel(api, bus, "Команды/события")
+Rel(bus, lake, "Стриминг данных (S3)")
+Rel(dwh, lake, "CDC/Batch загрузка (S3)")
+
+Rel(lake, sem, "Доменные витрины")
+Rel(sem, bi, "Датасеты/метрики (S1)")
+Rel(portal_app, sem, "Публикация и заявки на датасеты (S1,S2)")
+
+Rel(lake, ai, "Обучающие/онлайн выборки, без PHI в BI (S2)")
+Rel(lake, core, "Фичи скоринга/анти-фрод (S2)")
+
+' TODO: На будущее возможно можно переписать на более лаконичную легенду, через средства шаблона или иначе, но я не понял как сделать
+rectangle "**Условные обозначения:**\n\n**S1** — Быстрая подготовка отчётности\n**S2** — Независимое развитие доменов\n**S3** — Масштабирование для новых бизнесов" as Legend_Scenarios
+
+@enduml

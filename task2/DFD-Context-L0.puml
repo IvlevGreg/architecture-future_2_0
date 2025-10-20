@@ -1,0 +1,49 @@
+@startuml DFD-L0-Context
+!includeurl https://raw.githubusercontent.com/ArmanAvanesyan/DFD-PlantUML/main/DFD_Level_1.puml
+
+startDfd(Simple)
+
+External(e_biz, "Бизнес-пользователи доменов")
+External(e_partners, "Партнёры: фарма / девайсы")
+External(e_reg, "Регуляторы / аудит")
+
+Process("Будущее 2.0 — обработка данных")
+    SubProcess(p_portal,  "5.0", "Витрина/портал самообслуживания")
+    SubProcess(p_mesh,    "6.0", "Интеграционный слой (Kafka/CDC/API)")
+    SubProcess(p_gov,     "7.0", "Governance & Security (IAM/ABAC, Catalog, DQ)")
+    SubProcess(p_care,    "1.0", "Домен Клиника (ЭМК/учёт/инвентарь)")
+    SubProcess(p_ai,      "2.0", "Домен Мед.изображения и ИИ")
+    SubProcess(p_fin,     "3.0", "Домен Финтех")
+    SubProcess(p_partner, "4.0", "Домен Партнёры (Pharma/Devices)")
+
+    DataStore(ds_lake,  "Data Platform (Lakehouse: Bronze/Silver)")
+    DataStore(ds_marts, "Доменные витрины (Gold)")
+    DataStore(ds_meta,  "Каталог/Контракты/Lineage")
+DataFlows()
+
+' Портал
+Flow(e_biz, p_portal, "Запросы отчётов/срезов")
+Flow(p_portal, ds_marts, "Чтение витрин (policy-enforced)")
+Flow(ds_marts, p_portal, "Наборы данных/дашборды")
+
+' Производители данных
+Flow(p_care,    p_mesh, "События клиники/справочники (обезлич.)")
+Flow(p_ai,      p_mesh, "Результаты инференса (метаданные/скоринги)")
+Flow(p_fin,     p_mesh, "Транзакции/счета/кредиты")
+Flow(p_partner, p_mesh, "Каталоги/поставки/телеметрия")
+
+' Транспорт → платформа → витрины
+Flow(p_mesh,  ds_lake,  "CDC и события → Bronze")
+Flow(ds_lake, ds_marts, "Верификация/моделирование → Gold")
+
+' Управление и безопасность
+Flow(p_gov, p_portal, "Политики доступа/маскирование")
+Flow(p_gov, p_mesh,   "Схемы/контракты событий")
+Flow(p_gov, ds_marts, "Каталог/Lineage/DQ")
+Flow(ds_marts, p_gov, "Метрики качества/Lineage")
+
+' Регуляторы
+Flow(ds_marts, e_reg, "Агрегированная рег. отчётность")
+
+endDfd()
+@enduml
